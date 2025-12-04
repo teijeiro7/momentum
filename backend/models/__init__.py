@@ -2,7 +2,8 @@
 Models package
 """
 
-from models.habit import Habit
-from models.habit_log import HabitLog
+from .user import User
+from .habit import Habit
+from .habit_log import HabitLog
 
 __all__ = ["Habit", "HabitLog"]

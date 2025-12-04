@@ -9,8 +9,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
-from models import Habit, HabitLog
+from models import Habit, HabitLog, User
 from schemas import HeatmapResponse, HeatmapDataPoint
+from utils.auth_utils import get_current_user
 
 router = APIRouter(
     prefix="/analytics",
@@ -19,7 +20,11 @@ router = APIRouter(
 
 
 @router.get("/{habit_id}/heatmap", response_model=HeatmapResponse)
-def get_habit_heatmap(habit_id: int, db: Session = Depends(get_db)):
+def get_habit_heatmap(
+    habit_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     CRITICAL ENDPOINT: Demonstrates Python mastery with Pandas
     
@@ -31,8 +36,11 @@ def get_habit_heatmap(habit_id: int, db: Session = Depends(get_db)):
     5. Return last 30 days of data
     """
     
-    # Verify habit exists
-    habit = db.query(Habit).filter(Habit.id == habit_id).first()
+    # Verify habit exists and belongs to user
+    habit = db.query(Habit).filter(
+        Habit.id == habit_id,
+        Habit.user_id == current_user.id
+    ).first()
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     

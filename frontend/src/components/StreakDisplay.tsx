@@ -33,9 +33,9 @@ export default function StreakDisplay({ currentStreak, longestStreak, habitName 
   const isLongestStreak = currentStreak === longestStreak && currentStreak > 0;
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <div
-        className="rounded-2xl p-6 transition-all duration-300"
+        className="rounded-2xl p-6 transition-all duration-300 h-full flex flex-col justify-center"
         style={{
           background: 'var(--gradient-card)',
           border: `2px solid ${isOnFire ? 'var(--accent-neon)' : 'var(--border)'}`,

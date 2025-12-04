@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getHabits, getHabitLogs, Habit, HabitLog } from '../services/api';
 import StreakDisplay from './StreakDisplay';
+import HabitQuickToggle from './HabitQuickToggle';
 
 interface DashboardStats {
   totalHabits: number;
@@ -20,6 +21,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [completedHabitsToday, setCompletedHabitsToday] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadDashboardData();
@@ -32,7 +34,6 @@ export default function Dashboard() {
       setHabits(habitsData);
 
       // Calculate stats
-      let completedToday = 0;
       let completedThisWeek = 0;
       let maxStreak = 0;
       let currentStreakMax = 0;
@@ -40,13 +41,17 @@ export default function Dashboard() {
       const today = new Date().toISOString().split('T')[0];
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+      const completedToday = new Set<number>();
+
       for (const habit of habitsData) {
         try {
           const logs = await getHabitLogs(habit.id);
           
           // Check today
           const todayLog = logs.find(log => log.date.split('T')[0] === today);
-          if (todayLog?.value) completedToday++;
+          if (todayLog?.value) {
+            completedToday.add(habit.id);
+          }
 
           // Check this week
           const weekLogs = logs.filter(log => log.date.split('T')[0] >= weekAgo);
@@ -63,11 +68,12 @@ export default function Dashboard() {
 
       setStats({
         totalHabits: habitsData.length,
-        completedToday,
+        completedToday: completedToday.size,
         completedThisWeek,
         currentStreak: currentStreakMax,
         longestStreak: maxStreak,
       });
+      setCompletedHabitsToday(completedToday);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -78,44 +84,71 @@ export default function Dashboard() {
   const calculateStreak = (logs: HabitLog[]): { current: number; longest: number } => {
     if (logs.length === 0) return { current: 0, longest: 0 };
 
-    const sorted = [...logs]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .filter(log => log.value);
+    // Filter only completed logs and sort by date (newest first)
+    const completedLogs = logs
+      .filter(log => log.value)
+      .map(log => {
+        const date = new Date(log.date);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      })
+      .sort((a, b) => b.getTime() - a.getTime());
 
-    let current = 0;
-    let longest = 0;
-    let temp = 0;
+    if (completedLogs.length === 0) return { current: 0, longest: 0 };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    for (let i = 0; i < sorted.length; i++) {
-      const logDate = new Date(sorted[i].date);
-      logDate.setHours(0, 0, 0, 0);
-
-      if (i === 0) {
-        const daysDiff = Math.floor((today.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff <= 1) {
-          current = 1;
-          temp = 1;
-        }
-      } else {
-        const prevDate = new Date(sorted[i - 1].date);
-        prevDate.setHours(0, 0, 0, 0);
-        const daysDiff = Math.floor((prevDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
-
+    // Calculate current streak
+    let currentStreak = 0;
+    const mostRecentLog = completedLogs[0];
+    
+    // Check if the streak is still active (completed today or yesterday)
+    const daysSinceLastLog = Math.floor((today.getTime() - mostRecentLog.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysSinceLastLog <= 1) {
+      // Streak is active, count consecutive days from most recent
+      currentStreak = 1;
+      
+      for (let i = 1; i < completedLogs.length; i++) {
+        const currentDate = completedLogs[i];
+        const previousDate = completedLogs[i - 1];
+        const daysDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+        
         if (daysDiff === 1) {
-          temp++;
-          if (i === 1 || current > 0) current = temp;
+          currentStreak++;
         } else {
-          temp = 1;
+          break; // Streak broken
         }
       }
-
-      longest = Math.max(longest, temp);
     }
 
-    return { current, longest };
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 1;
+
+    for (let i = 1; i < completedLogs.length; i++) {
+      const currentDate = completedLogs[i];
+      const previousDate = completedLogs[i - 1];
+      const daysDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    
+    longestStreak = Math.max(longestStreak, tempStreak);
+
+    return { 
+      current: currentStreak, 
+      longest: Math.max(longestStreak, currentStreak) 
+    };
   };
 
   const completionPercentage = stats.totalHabits > 0 
@@ -148,6 +181,28 @@ export default function Dashboard() {
           })}
         </p>
       </div>
+
+      {/* Today's Habits - Quick Toggle */}
+      <div className="animate-slide-in-up">
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: 'var(--gradient-card)',
+            border: '2px solid var(--border)',
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          <h2 className="text-2xl font-bold mb-4 gradient-text">
+            Today's Habits
+          </h2>
+          <HabitQuickToggle
+            habits={habits}
+            completedHabits={completedHabitsToday}
+            onToggle={loadDashboardData}
+          />
+        </div>
+      </div>
+
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

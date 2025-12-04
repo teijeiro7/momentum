@@ -2,17 +2,24 @@ import Dashboard from './components/Dashboard';
 import HabitList from './components/HabitList';
 import HabitChart from './components/HabitChart';
 import HabitLogger from './components/HabitLogger';
-import ThemeToggle from './components/ThemeToggle';
 import FocusMode from './components/FocusMode';
 import DataExport from './components/DataExport';
 import CalendarView from './components/CalendarView';
+import Login from './components/Login';
+import Register from './components/Register';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import { Habit, getHabitLogs } from './services/api';
 import { useState } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 type View = 'dashboard' | 'habits' | 'analytics' | 'focus' | 'export';
+type AuthView = 'login' | 'register';
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, loading, logout} = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [authView, setAuthView] = useState<AuthView>('login');
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -34,110 +41,45 @@ function App() {
     setRefreshKey(prev => prev + 1);
   };
 
-  const navItems = [
-    { id: 'dashboard' as View, label: 'Dashboard', icon: '📊' },
-    { id: 'habits' as View, label: 'Habits', icon: '✅' },
-    { id: 'analytics' as View, label: 'Analytics', icon: '📈' },
-    { id: 'focus' as View, label: 'Focus', icon: '🎯' },
-    { id: 'export' as View, label: 'Export', icon: '📥' },
-  ];
+  // Show loading state
+  if (loading) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--bg-primary)' }}
+      >
+        <div className="text-center">
+          <div 
+            className="animate-spin rounded-full h-16 w-16 border-4 border-t-transparent mx-auto mb-4" 
+            style={{ borderColor: 'var(--accent-neon)' }}
+          />
+          <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
+  // Show auth screens if not authenticated
+  if (!isAuthenticated) {
+    if (authView === 'login') {
+      return <Login onSwitchToRegister={() => setAuthView('register')} />;
+    } else {
+      return <Register onSwitchToLogin={() => setAuthView('login')} />;
+    }
+  }
+
+  // Main app (authenticated)
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-50 backdrop-blur-lg"
-        style={{
-          background: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border)',
-          boxShadow: 'var(--shadow-md)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <img 
-                src="../images/icons/logo.png" 
-                alt="Logo" 
-                className="h-10 w-auto"
-              />
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id)}
-                  className="px-4 py-2 rounded-lg font-medium transition-all duration-200"
-                  style={{
-                    background: currentView === item.id ? 'var(--accent-glow)' : 'transparent',
-                    color: currentView === item.id ? 'var(--accent-neon)' : 'var(--text-secondary)',
-                    border: currentView === item.id ? '1px solid var(--accent-neon)' : '1px solid transparent',
-                  }}
-                >
-                  <span className="mr-2">{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-
-            {/* Theme Toggle */}
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg"
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d={isMobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div
-            className="md:hidden border-t animate-slide-in-down"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}
-          >
-            <div className="px-4 py-3 space-y-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setCurrentView(item.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 text-left"
-                  style={{
-                    background: currentView === item.id ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-                    color: currentView === item.id ? 'var(--accent-neon)' : 'var(--text-secondary)',
-                    border: currentView === item.id ? '1px solid var(--accent-neon)' : '1px solid transparent',
-                  }}
-                >
-                  <span className="mr-2">{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </header>
+      <Header
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        logout={logout}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+      />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -214,21 +156,16 @@ function App() {
         {currentView === 'export' && <DataExport />}
       </main>
 
-      {/* Footer */}
-      <footer
-        className="mt-auto border-t"
-        style={{
-          background: 'var(--bg-secondary)',
-          borderColor: 'var(--border)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            Built with 💚 • All Premium Features Free Forever
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

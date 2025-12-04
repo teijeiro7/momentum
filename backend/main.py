@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
-from routers import habits, habit_logs, analytics
+from routers import habits, habit_logs, analytics, auth
 
 # Initialize database
 init_db()
@@ -36,6 +36,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(habits.router)
 app.include_router(habit_logs.router)
 app.include_router(analytics.router)

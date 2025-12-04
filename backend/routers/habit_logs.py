@@ -7,8 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
-from models import Habit, HabitLog
+from models import Habit, HabitLog, User
 from schemas import HabitLogCreate, HabitLogResponse
+from utils.auth_utils import get_current_user
 
 router = APIRouter(
     prefix="/habits/{habit_id}/logs",
@@ -17,10 +18,18 @@ router = APIRouter(
 
 
 @router.post("", response_model=HabitLogResponse, status_code=201)
-def create_habit_log(habit_id: int, log: HabitLogCreate, db: Session = Depends(get_db)):
+def create_habit_log(
+    habit_id: int, 
+    log: HabitLogCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Create a log entry for a habit"""
-    # Check if habit exists
-    habit = db.query(Habit).filter(Habit.id == habit_id).first()
+    # Check if habit exists and belongs to user
+    habit = db.query(Habit).filter(
+        Habit.id == habit_id,
+        Habit.user_id == current_user.id
+    ).first()
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     
@@ -46,9 +55,16 @@ def create_habit_log(habit_id: int, log: HabitLogCreate, db: Session = Depends(g
 
 
 @router.get("", response_model=List[HabitLogResponse])
-def list_habit_logs(habit_id: int, db: Session = Depends(get_db)):
+def list_habit_logs(
+    habit_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """List all logs for a habit"""
-    habit = db.query(Habit).filter(Habit.id == habit_id).first()
+    habit = db.query(Habit).filter(
+        Habit.id == habit_id,
+        Habit.user_id == current_user.id
+    ).first()
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     
@@ -57,8 +73,21 @@ def list_habit_logs(habit_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{log_id}", status_code=204)
-def delete_habit_log(habit_id: int, log_id: int, db: Session = Depends(get_db)):
+def delete_habit_log(
+    habit_id: int, 
+    log_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Delete a log entry"""
+    # Verify habit ownership
+    habit = db.query(Habit).filter(
+        Habit.id == habit_id,
+        Habit.user_id == current_user.id
+    ).first()
+    if not habit:
+        raise HTTPException(status_code=404, detail="Habit not found")
+    
     db_log = db.query(HabitLog).filter(
         HabitLog.id == log_id,
         HabitLog.habit_id == habit_id

@@ -9,7 +9,35 @@ const api = axios.create({
   },
 });
 
-// Types
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Auth Types
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  created_at: string;
+}
+
+export interface UserCreate {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface Token {
+  access_token: string;
+  token_type: string;
+}
+
+// Habit Types
 export interface Habit {
   id: number;
   name: string;
@@ -97,6 +125,30 @@ export const deleteHabitLog = async (habitId: number, logId: number): Promise<vo
 // Analytics
 export const getHabitHeatmap = async (habitId: number): Promise<HeatmapResponse> => {
   const response = await api.get(`/analytics/${habitId}/heatmap`);
+  return response.data;
+};
+
+// Authentication
+export const register = async (username: string, email: string, password: string): Promise<User> => {
+  const response = await api.post('/auth/register', { username, email, password });
+  return response.data;
+};
+
+export const login = async (username: string, password: string): Promise<Token> => {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+  
+  const response = await api.post('/auth/login', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+  return response.data;
+};
+
+export const getCurrentUser = async (): Promise<User> => {
+  const response = await api.get('/auth/me');
   return response.data;
 };
 
