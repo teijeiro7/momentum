@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
-from routers import habits, habit_logs, analytics, auth
+from routers import habits, habit_logs, analytics, auth, categories, tags, goals, achievements, streaks
 
 # Initialize database
 init_db()
@@ -40,6 +40,11 @@ app.include_router(auth.router)
 app.include_router(habits.router)
 app.include_router(habit_logs.router)
 app.include_router(analytics.router)
+app.include_router(categories.router)
+app.include_router(tags.router)
+app.include_router(goals.router)
+app.include_router(achievements.router)
+app.include_router(streaks.router)
 
 
 # Health check endpoint

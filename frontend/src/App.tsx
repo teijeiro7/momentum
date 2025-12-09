@@ -5,6 +5,7 @@ import HabitLogger from './components/HabitLogger';
 import FocusMode from './components/FocusMode';
 import DataExport from './components/DataExport';
 import CalendarView from './components/CalendarView';
+import GeneralAnalytics from './components/GeneralAnalytics';
 import Login from './components/Login';
 import Register from './components/Register';
 import Header from './components/Header';
@@ -13,7 +14,7 @@ import { Habit, getHabitLogs } from './services/api';
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type View = 'dashboard' | 'habits' | 'analytics' | 'focus' | 'export';
+type View = 'dashboard' | 'habits' | 'analytics' | 'habit-detail' | 'focus' | 'export';
 type AuthView = 'login' | 'register';
 
 function AppContent() {
@@ -27,7 +28,7 @@ function AppContent() {
 
   const handleSelectHabit = async (habit: Habit) => {
     setSelectedHabit(habit);
-    setCurrentView('analytics');
+    setCurrentView('habit-detail');
     // Load logs for calendar view
     try {
       const logs = await getHabitLogs(habit.id);
@@ -96,58 +97,39 @@ function AppContent() {
 
         {currentView === 'analytics' && (
           <div className="animate-fade-in">
-            {selectedHabit ? (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-3xl font-bold gradient-text">
-                    {selectedHabit.name}
-                  </h2>
-                  <button
-                    onClick={() => setCurrentView('habits')}
-                    className="px-4 py-2 rounded-lg transition-all duration-200 hover-lift"
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    ← Back to Habits
-                  </button>
-                </div>
-                <HabitLogger habit={selectedHabit} onLogCreated={handleLogCreated} />
-                <HabitChart key={refreshKey} habitId={selectedHabit.id} />
-                <CalendarView 
-                  habitName={selectedHabit.name}
-                  logs={habitLogs}
-                />
-              </div>
-            ) : (
-              <div
-                className="rounded-2xl p-12 text-center"
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '2px solid var(--border)',
-                }}
-              >
-                <div className="text-6xl mb-4">📊</div>
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  No Habit Selected
-                </h3>
-                <p className="mb-6" style={{ color: 'var(--text-muted)' }}>
-                  Select a habit from the Habits tab to view detailed analytics
-                </p>
+            <GeneralAnalytics />
+          </div>
+        )}
+
+        {currentView === 'habit-detail' && selectedHabit && (
+          <div className="animate-fade-in">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-bold gradient-text">
+                  {selectedHabit.name}
+                </h2>
                 <button
-                  onClick={() => setCurrentView('habits')}
-                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover-lift hover-glow"
+                  onClick={() => {
+                    setSelectedHabit(null);
+                    setCurrentView('habits');
+                  }}
+                  className="px-4 py-2 rounded-lg transition-all duration-200 hover-lift"
                   style={{
-                    background: 'var(--gradient-primary)',
-                    color: 'var(--bg-primary)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
                   }}
                 >
-                  Go to Habits
+                  ← Back to Habits
                 </button>
               </div>
-            )}
+              <HabitLogger habit={selectedHabit} onLogCreated={handleLogCreated} />
+              <HabitChart key={refreshKey} habitId={selectedHabit.id} />
+              <CalendarView 
+                habitName={selectedHabit.name}
+                logs={habitLogs}
+              />
+            </div>
           </div>
         )}
 
