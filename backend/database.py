@@ -19,5 +19,6 @@ Base = declarative_base()
 
 def init_db():
     """Initialize database tables"""
-    from models import user, habit, habit_log  # Import models to register them
+    from models import user, habit, habit_log, category, tag, goal, achievement, streak
     Base.metadata.create_all(bind=engine)
+

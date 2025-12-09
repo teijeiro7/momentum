@@ -1,6 +1,6 @@
 import ThemeToggle from './ThemeToggle';
 
-type View = 'dashboard' | 'habits' | 'analytics' | 'focus' | 'export';
+type View = 'dashboard' | 'habits' | 'analytics' | 'habit-detail' | 'focus' | 'export';
 
 interface HeaderProps {
   currentView: View;

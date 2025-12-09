@@ -1,13 +1,13 @@
 """
-Habits router - CRUD endpoints for habits
+Habits router - CRUD endpoints for habits with category and tag support
 """
 
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
-from models import Habit, User
+from models import Habit, User, Tag
 from schemas import HabitCreate, HabitUpdate, HabitResponse
 from utils.auth_utils import get_current_user
 
@@ -23,12 +23,22 @@ def create_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new habit"""
+    """Create a new habit with optional category and tags"""
     db_habit = Habit(
         name=habit.name, 
         goal=habit.goal,
-        user_id=current_user.id
+        user_id=current_user.id,
+        category_id=habit.category_id
     )
+    
+    # Add tags if provided
+    if habit.tag_ids:
+        tags = db.query(Tag).filter(
+            Tag.id.in_(habit.tag_ids),
+            Tag.user_id == current_user.id
+        ).all()
+        db_habit.tags = tags
+    
     db.add(db_habit)
     db.commit()
     db.refresh(db_habit)
@@ -37,11 +47,23 @@ def create_habit(
 
 @router.get("", response_model=List[HabitResponse])
 def list_habits(
+    category_id: Optional[int] = Query(None, description="Filter by category ID"),
+    tag_id: Optional[int] = Query(None, description="Filter by tag ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all habits for current user"""
-    habits = db.query(Habit).filter(Habit.user_id == current_user.id).all()
+    """List all habits for current user with optional filtering"""
+    query = db.query(Habit).filter(Habit.user_id == current_user.id)
+    
+    # Filter by category if provided
+    if category_id is not None:
+        query = query.filter(Habit.category_id == category_id)
+    
+    # Filter by tag if provided
+    if tag_id is not None:
+        query = query.join(Habit.tags).filter(Tag.id == tag_id)
+    
+    habits = query.all()
     return habits
 
 
@@ -68,7 +90,7 @@ def update_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a habit"""
+    """Update a habit including category and tags"""
     db_habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -76,10 +98,21 @@ def update_habit(
     if not db_habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     
+    # Update basic fields
     if habit_update.name is not None:
         db_habit.name = habit_update.name
     if habit_update.goal is not None:
         db_habit.goal = habit_update.goal
+    if habit_update.category_id is not None:
+        db_habit.category_id = habit_update.category_id
+    
+    # Update tags if provided
+    if habit_update.tag_ids is not None:
+        tags = db.query(Tag).filter(
+            Tag.id.in_(habit_update.tag_ids),
+            Tag.user_id == current_user.id
+        ).all()
+        db_habit.tags = tags
     
     db.commit()
     db.refresh(db_habit)

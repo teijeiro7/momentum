@@ -229,9 +229,14 @@ export default function Dashboard() {
             </h3>
             
             {/* Circular Progress */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="relative w-32 h-32">
-                <svg className="transform -rotate-90 w-32 h-32">
+            <div className="flex items-center justify-center mb-4" style={{ padding: '1rem' }}>
+              <div className="relative" style={{ width: '128px', height: '128px' }}>
+                <svg 
+                  className="transform -rotate-90" 
+                  width="128" 
+                  height="128"
+                  style={{ overflow: 'visible' }}
+                >
                   <circle
                     cx="64"
                     cy="64"
@@ -250,7 +255,7 @@ export default function Dashboard() {
                     strokeDasharray={`${2 * Math.PI * 56}`}
                     strokeDashoffset={`${2 * Math.PI * 56 * (1 - completionPercentage / 100)}`}
                     className="transition-all duration-1000"
-                    style={{ filter: 'drop-shadow(0 0 8px var(--accent-neon))' }}
+                    style={{ filter: 'drop-shadow(0 0 12px var(--accent-neon))' }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
