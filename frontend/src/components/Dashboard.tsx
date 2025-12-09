@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { getHabits, getHabitLogs, Habit, HabitLog } from '../services/api';
-import StreakDisplay from './StreakDisplay';
-import HabitQuickToggle from './HabitQuickToggle';
+import { useEffect, useState } from "react";
+import { getHabits, getHabitLogs, Habit, HabitLog } from "../services/api";
+import StreakDisplay from "./StreakDisplay";
+import HabitQuickToggle from "./HabitQuickToggle";
 
 interface DashboardStats {
   totalHabits: number;
@@ -11,7 +11,11 @@ interface DashboardStats {
   longestStreak: number;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  onNavigate: (view: "habits" | "analytics" | "focus") => void;
+}
+
+export default function Dashboard({ onNavigate }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats>({
     totalHabits: 0,
     completedToday: 0,
@@ -21,7 +25,9 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [completedHabitsToday, setCompletedHabitsToday] = useState<Set<number>>(new Set());
+  const [completedHabitsToday, setCompletedHabitsToday] = useState<Set<number>>(
+    new Set()
+  );
 
   useEffect(() => {
     loadDashboardData();
@@ -38,24 +44,28 @@ export default function Dashboard() {
       let maxStreak = 0;
       let currentStreakMax = 0;
 
-      const today = new Date().toISOString().split('T')[0];
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
 
       const completedToday = new Set<number>();
 
       for (const habit of habitsData) {
         try {
           const logs = await getHabitLogs(habit.id);
-          
+
           // Check today
-          const todayLog = logs.find(log => log.date.split('T')[0] === today);
+          const todayLog = logs.find((log) => log.date.split("T")[0] === today);
           if (todayLog?.value) {
             completedToday.add(habit.id);
           }
 
           // Check this week
-          const weekLogs = logs.filter(log => log.date.split('T')[0] >= weekAgo);
-          if (weekLogs.some(log => log.value)) completedThisWeek++;
+          const weekLogs = logs.filter(
+            (log) => log.date.split("T")[0] >= weekAgo
+          );
+          if (weekLogs.some((log) => log.value)) completedThisWeek++;
 
           // Calculate streak
           const streak = calculateStreak(logs);
@@ -75,19 +85,21 @@ export default function Dashboard() {
       });
       setCompletedHabitsToday(completedToday);
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+      console.error("Failed to load dashboard data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateStreak = (logs: HabitLog[]): { current: number; longest: number } => {
+  const calculateStreak = (
+    logs: HabitLog[]
+  ): { current: number; longest: number } => {
     if (logs.length === 0) return { current: 0, longest: 0 };
 
     // Filter only completed logs and sort by date (newest first)
     const completedLogs = logs
-      .filter(log => log.value)
-      .map(log => {
+      .filter((log) => log.value)
+      .map((log) => {
         const date = new Date(log.date);
         date.setHours(0, 0, 0, 0);
         return date;
@@ -98,26 +110,31 @@ export default function Dashboard() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
     // Calculate current streak
     let currentStreak = 0;
     const mostRecentLog = completedLogs[0];
-    
+
     // Check if the streak is still active (completed today or yesterday)
-    const daysSinceLastLog = Math.floor((today.getTime() - mostRecentLog.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const daysSinceLastLog = Math.floor(
+      (today.getTime() - mostRecentLog.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
     if (daysSinceLastLog <= 1) {
       // Streak is active, count consecutive days from most recent
       currentStreak = 1;
-      
+
       for (let i = 1; i < completedLogs.length; i++) {
         const currentDate = completedLogs[i];
         const previousDate = completedLogs[i - 1];
-        const daysDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const daysDiff = Math.floor(
+          (previousDate.getTime() - currentDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+
         if (daysDiff === 1) {
           currentStreak++;
         } else {
@@ -133,7 +150,9 @@ export default function Dashboard() {
     for (let i = 1; i < completedLogs.length; i++) {
       const currentDate = completedLogs[i];
       const previousDate = completedLogs[i - 1];
-      const daysDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
       if (daysDiff === 1) {
         tempStreak++;
@@ -142,25 +161,27 @@ export default function Dashboard() {
         tempStreak = 1;
       }
     }
-    
+
     longestStreak = Math.max(longestStreak, tempStreak);
 
-    return { 
-      current: currentStreak, 
-      longest: Math.max(longestStreak, currentStreak) 
+    return {
+      current: currentStreak,
+      longest: Math.max(longestStreak, currentStreak),
     };
   };
 
-  const completionPercentage = stats.totalHabits > 0 
-    ? Math.round((stats.completedToday / stats.totalHabits) * 100) 
-    : 0;
+  const completionPercentage =
+    stats.totalHabits > 0
+      ? Math.round((stats.completedToday / stats.totalHabits) * 100)
+      : 0;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" 
-             style={{ borderColor: 'var(--accent-growth)' }}>
-        </div>
+        <div
+          className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent"
+          style={{ borderColor: "var(--accent-growth)" }}
+        ></div>
       </div>
     );
   }
@@ -172,12 +193,12 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold mb-2 gradient-text">
           Welcome Back! 👋
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          {new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        <p style={{ color: "var(--text-secondary)" }}>
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </p>
       </div>
@@ -187,9 +208,9 @@ export default function Dashboard() {
         <div
           className="rounded-2xl p-6"
           style={{
-            background: 'var(--gradient-card)',
-            border: '2px solid var(--border)',
-            boxShadow: 'var(--shadow-md)',
+            background: "var(--gradient-card)",
+            border: "2px solid var(--border)",
+            boxShadow: "var(--shadow-md)",
           }}
         >
           <h2 className="text-2xl font-bold mb-4 gradient-text">
@@ -202,7 +223,6 @@ export default function Dashboard() {
           />
         </div>
       </div>
-
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -219,23 +239,32 @@ export default function Dashboard() {
           <div
             className="rounded-2xl p-6 h-full"
             style={{
-              background: 'var(--gradient-card)',
-              border: '2px solid var(--border)',
-              boxShadow: 'var(--shadow-md)',
+              background: "var(--gradient-card)",
+              border: "2px solid var(--border)",
+              boxShadow: "var(--shadow-md)",
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h3
+              className="text-lg font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
               Today's Progress
             </h3>
-            
+
             {/* Circular Progress */}
-            <div className="flex items-center justify-center mb-4" style={{ padding: '1rem' }}>
-              <div className="relative" style={{ width: '128px', height: '128px' }}>
-                <svg 
-                  className="transform -rotate-90" 
-                  width="128" 
+            <div
+              className="flex items-center justify-center mb-4"
+              style={{ padding: "1rem" }}
+            >
+              <div
+                className="relative"
+                style={{ width: "128px", height: "128px" }}
+              >
+                <svg
+                  className="transform -rotate-90"
+                  width="128"
                   height="128"
-                  style={{ overflow: 'visible' }}
+                  style={{ overflow: "visible" }}
                 >
                   <circle
                     cx="64"
@@ -253,9 +282,13 @@ export default function Dashboard() {
                     strokeWidth="8"
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 56}`}
-                    strokeDashoffset={`${2 * Math.PI * 56 * (1 - completionPercentage / 100)}`}
+                    strokeDashoffset={`${
+                      2 * Math.PI * 56 * (1 - completionPercentage / 100)
+                    }`}
                     className="transition-all duration-1000"
-                    style={{ filter: 'drop-shadow(0 0 12px var(--accent-neon))' }}
+                    style={{
+                      filter: "drop-shadow(0 0 12px var(--accent-neon))",
+                    }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -267,10 +300,13 @@ export default function Dashboard() {
             </div>
 
             <div className="text-center">
-              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {stats.completedToday} / {stats.totalHabits}
               </p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 Habits Completed
               </p>
             </div>
@@ -282,38 +318,61 @@ export default function Dashboard() {
           <div
             className="rounded-2xl p-6 h-full"
             style={{
-              background: 'var(--gradient-card)',
-              border: '2px solid var(--border)',
-              boxShadow: 'var(--shadow-md)',
+              background: "var(--gradient-card)",
+              border: "2px solid var(--border)",
+              boxShadow: "var(--shadow-md)",
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h3
+              className="text-lg font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
               This Week
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-2">
-                  <span style={{ color: 'var(--text-secondary)' }}>Active Habits</span>
-                  <span className="font-bold" style={{ color: 'var(--accent-neon)' }}>
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    Active Habits
+                  </span>
+                  <span
+                    className="font-bold"
+                    style={{ color: "var(--accent-neon)" }}
+                  >
                     {stats.completedThisWeek}
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full" style={{ background: 'var(--inactive)' }}>
+                <div
+                  className="w-full h-2 rounded-full"
+                  style={{ background: "var(--inactive)" }}
+                >
                   <div
                     className="h-full rounded-full transition-all duration-1000"
                     style={{
-                      width: `${stats.totalHabits > 0 ? (stats.completedThisWeek / stats.totalHabits) * 100 : 0}%`,
-                      background: 'var(--gradient-primary)',
+                      width: `${
+                        stats.totalHabits > 0
+                          ? (stats.completedThisWeek / stats.totalHabits) * 100
+                          : 0
+                      }%`,
+                      background: "var(--gradient-primary)",
                     }}
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div
+                className="pt-4 border-t"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <div className="flex items-center justify-between">
-                  <span style={{ color: 'var(--text-secondary)' }}>Total Habits</span>
-                  <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    Total Habits
+                  </span>
+                  <span
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {stats.totalHabits}
                   </span>
                 </div>
@@ -326,30 +385,33 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-in-up stagger-3">
         <button
+          onClick={() => onNavigate("habits")}
           className="p-4 rounded-xl font-semibold transition-all duration-200 hover-lift hover-glow"
           style={{
-            background: 'var(--gradient-primary)',
-            color: 'var(--bg-primary)',
+            background: "var(--gradient-primary)",
+            color: "var(--bg-primary)",
           }}
         >
           ➕ Add New Habit
         </button>
         <button
+          onClick={() => onNavigate("analytics")}
           className="p-4 rounded-xl font-semibold transition-all duration-200 hover-lift"
           style={{
-            background: 'var(--bg-card)',
-            border: '2px solid var(--border)',
-            color: 'var(--text-primary)',
+            background: "var(--bg-card)",
+            border: "2px solid var(--border)",
+            color: "var(--text-primary)",
           }}
         >
           📊 View Analytics
         </button>
         <button
+          onClick={() => onNavigate("focus")}
           className="p-4 rounded-xl font-semibold transition-all duration-200 hover-lift"
           style={{
-            background: 'var(--bg-card)',
-            border: '2px solid var(--border)',
-            color: 'var(--text-primary)',
+            background: "var(--bg-card)",
+            border: "2px solid var(--border)",
+            color: "var(--text-primary)",
           }}
         >
           🎯 Focus Mode
