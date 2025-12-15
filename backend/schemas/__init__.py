@@ -1,7 +1,3 @@
-"""
-Schemas package
-"""
-
 from schemas.habit import HabitCreate, HabitUpdate, HabitResponse, CategoryBasic, TagBasic
 from schemas.habit_log import HabitLogCreate, HabitLogResponse
 from schemas.analytics import (

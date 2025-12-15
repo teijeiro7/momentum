@@ -24,7 +24,6 @@ def create_habit_log(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a log entry for a habit"""
     # Check if habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
@@ -60,7 +59,6 @@ def list_habit_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all logs for a habit"""
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -79,7 +77,6 @@ def delete_habit_log(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a log entry"""
     # Verify habit ownership
     habit = db.query(Habit).filter(
         Habit.id == habit_id,

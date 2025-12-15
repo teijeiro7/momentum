@@ -1,7 +1,3 @@
-"""
-Authentication schemas
-"""
-
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 

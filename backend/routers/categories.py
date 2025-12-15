@@ -1,7 +1,3 @@
-"""
-Categories router - CRUD and analytics endpoints for habit categories
-"""
-
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -25,7 +21,6 @@ def create_category(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new category"""
     # Check if category name already exists
     existing = db.query(Category).filter(Category.name == category.name).first()
     if existing:
@@ -53,7 +48,6 @@ def list_categories(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all available categories"""
     categories = db.query(Category).all()
     return categories
 
@@ -64,7 +58,6 @@ def get_category(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific category"""
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -77,7 +70,6 @@ def get_category_habits(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all habits in a category for current user"""
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -96,13 +88,6 @@ def get_category_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get category statistics using Pandas.
-    
-    Calculates:
-    - Number of habits in category
-    - Overall completion rate for category
-    """
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -161,7 +146,6 @@ def update_category(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a category"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")

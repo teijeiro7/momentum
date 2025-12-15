@@ -1,7 +1,3 @@
-"""
-Streaks router - Advanced streak analytics using Pandas
-"""
-
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -29,16 +25,6 @@ def get_streak_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get comprehensive streak statistics for a habit.
-    
-    Uses Pandas to calculate:
-    - Current active streak
-    - Longest streak ever
-    - Total number of streak periods
-    - Average streak length
-    """
-    # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -68,12 +54,6 @@ def get_streak_history_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get historical streak records for a habit.
-    
-    Returns all streak periods with start/end dates and lengths.
-    """
-    # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -82,16 +62,12 @@ def get_streak_history_endpoint(
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     
-    # Get all logs
     logs = db.query(HabitLog).filter(HabitLog.habit_id == habit_id).all()
     
-    # Calculate streak history using Pandas
     history = get_streak_history(logs)
     
-    # Convert to response format
     streak_responses = []
     for idx, (start_date, end_date, length) in enumerate(history):
-        # Check if we have this streak in database
         db_streak = db.query(Streak).filter(
             Streak.habit_id == habit_id,
             Streak.start_date == start_date
@@ -139,8 +115,6 @@ def get_current_streak(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get current active streak details"""
-    # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -169,10 +143,6 @@ def recalculate_streaks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Recalculate and update all streak records for a habit.
-    Useful for fixing inconsistencies or after bulk data import.
-    """
     # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,

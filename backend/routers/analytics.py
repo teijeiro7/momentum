@@ -1,7 +1,3 @@
-"""
-Analytics router - Data analytics endpoints using Pandas
-"""
-
 from datetime import datetime, timedelta
 from typing import Dict
 import pandas as pd
@@ -33,17 +29,6 @@ def get_dashboard_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get comprehensive dashboard analytics for all user habits.
-    
-    Returns:
-    - Overall statistics (total habits, completion rate, etc.)
-    - Combined heatmap showing all habits activity
-    - Individual habit summaries
-    - Category breakdown
-    
-    Uses Pandas for efficient data processing and aggregation.
-    """
     
     # Get all user habits
     habits = db.query(Habit).filter(Habit.user_id == current_user.id).all()
@@ -190,16 +175,6 @@ def get_habit_heatmap(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get heatmap for a specific habit.
-    
-    Process:
-    1. Fetch all logs from database
-    2. Load into Pandas DataFrame
-    3. Use Pandas to fill missing dates with 0
-    4. Format for ApexCharts heatmap visualization
-    5. Return last 30 days of data
-    """
     
     # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(

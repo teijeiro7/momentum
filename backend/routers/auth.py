@@ -1,7 +1,3 @@
-"""
-Authentication router - Register, Login, Get Current User
-"""
-
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -19,7 +15,6 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user"""
     
     # Check if username already exists
     existing_user = db.query(User).filter(User.username == user_data.username).first()
@@ -54,7 +49,6 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Login and get JWT token"""
     
     # Find user by username
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -74,5 +68,4 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
-    """Get current authenticated user"""
     return current_user

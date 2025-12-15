@@ -1,7 +1,3 @@
-"""
-Tags router - CRUD endpoints for user-specific tags
-"""
-
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session

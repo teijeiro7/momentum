@@ -1,15 +1,3 @@
-"""
-Habit Tracker MVP - Backend
-FastAPI + SQLAlchemy + Pandas for data analytics
-
-Refactored for scalability with modular structure:
-- database.py: Database configuration
-- models/: SQLAlchemy models
-- schemas/: Pydantic schemas
-- routers/: API endpoints
-- dependencies.py: Shared dependencies
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

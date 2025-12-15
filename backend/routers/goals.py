@@ -1,7 +1,3 @@
-"""
-Goals router - CRUD and progress tracking endpoints for user goals
-"""
-
 from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, status, Query
@@ -30,7 +26,6 @@ def create_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new goal"""
     # Verify habit exists and belongs to user
     habit = db.query(Habit).filter(
         Habit.id == goal.habit_id,
@@ -130,10 +125,6 @@ def check_and_update_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Check if goal is completed and update status.
-    Creates achievement if goal is newly completed.
-    """
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
         Goal.user_id == current_user.id
@@ -175,7 +166,6 @@ def update_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a goal"""
     db_goal = db.query(Goal).filter(
         Goal.id == goal_id,
         Goal.user_id == current_user.id
@@ -206,7 +196,6 @@ def delete_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a goal"""
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
         Goal.user_id == current_user.id
@@ -227,7 +216,6 @@ def get_habit_goals(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all goals for a specific habit"""
     # Verify habit belongs to user
     habit = db.query(Habit).filter(
         Habit.id == habit_id,

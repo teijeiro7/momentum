@@ -1,7 +1,3 @@
-"""
-Habits router - CRUD endpoints for habits with category and tag support
-"""
-
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
@@ -23,7 +19,6 @@ def create_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new habit with optional category and tags"""
     db_habit = Habit(
         name=habit.name, 
         goal=habit.goal,
@@ -52,7 +47,6 @@ def list_habits(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all habits for current user with optional filtering"""
     query = db.query(Habit).filter(Habit.user_id == current_user.id)
     
     # Filter by category if provided
@@ -73,7 +67,6 @@ def get_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific habit"""
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -90,7 +83,6 @@ def update_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a habit including category and tags"""
     db_habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id
@@ -125,7 +117,6 @@ def delete_habit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a habit"""
     db_habit = db.query(Habit).filter(
         Habit.id == habit_id,
         Habit.user_id == current_user.id

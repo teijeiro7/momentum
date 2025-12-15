@@ -1,7 +1,3 @@
-"""
-Shared dependencies for FastAPI endpoints
-"""
-
 from database import SessionLocal
 
 

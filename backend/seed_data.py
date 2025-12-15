@@ -1,8 +1,3 @@
-"""
-Seed script to create sample categories and test data
-Run this after starting the backend to populate initial data
-"""
-
 import requests
 import json
 from datetime import datetime, timedelta
